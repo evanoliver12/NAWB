@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <title>Simple Journal App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20% auto;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    label {
+      margin-bottom: 10px;
+    }
+
+    input {
+      padding: 8px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 10px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sign In</h1>
+  <form action="/signin" method="post">
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+    <button type="submit">Continue</button>
+  </form>
+  <script>
+   document.addEventListener('DOMContentLoaded', function () {
+  const journalTextarea = document.getElementById('journal');
+  let typingTimer;
+  const typingDelay = 1000; // Adjust the delay as needed
+
+  // Load existing notes from the server
+  const username = getQueryParam('username');
+  loadNotesFromServer(username);
+
+  // Save note to server when typing stops
+  journalTextarea.addEventListener('input', function () {
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(function () {
+      saveNoteToServer(username, journalTextarea.value);
+    }, typingDelay);
+  });
+
+  // Save note to server when leaving the page
+  window.addEventListener('beforeunload', function () {
+    saveNoteToServer(username, journalTextarea.value);
+  });
+
+  function getQueryParam(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+  }
+
+  function saveNoteToServer(username, note) {
+    fetch('/saveNote', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `username=${encodeURIComponent(username)}&note=${encodeURIComponent(note)}`,
+    });
+  }
+
+  function loadNotesFromServer(username) {
+    fetch(`/dashboard?username=${encodeURIComponent(username)}`)
+      .then(response => response.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const storedNotes = doc.getElementById('journal').value;
+        journalTextarea.value = storedNotes;
+      })
+      .catch(error => {
+        console.error('Error loading notes:', error);
+      });
+  }
+});
+  </script>
+</body>
+</html>
+
+   
